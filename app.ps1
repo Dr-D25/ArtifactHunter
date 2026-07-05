@@ -22,7 +22,6 @@ if (-not (Test-Path $yamlPath)) {
     exit 1
 }
 
-# ---------- Ensure YAML module is available ----------
 if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
     Write-Host "Module 'powershell-yaml' not found. Installing..." -ForegroundColor Yellow
     try {
@@ -35,16 +34,13 @@ if (-not (Get-Module -ListAvailable -Name powershell-yaml)) {
 }
 Import-Module powershell-yaml -Force
 
-# ---------- Load YAML (multidocument support) ----------
 $yamlContent = Get-Content $yamlPath -Raw -Encoding UTF8
 try {
-    # Разбиваем на документы по --- (с учетом возможных пробелов)
     $documents = $yamlContent -split '(?m)^---\s*$' | Where-Object { $_ -match '\S' }
     $artifacts = @()
     foreach ($doc in $documents) {
         $parsed = ConvertFrom-Yaml -Yaml $doc
         if ($parsed) {
-            # Если это массив (уже несколько объектов), добавляем их все
             if ($parsed -is [System.Collections.IEnumerable] -and $parsed -isnot [string]) {
                 $artifacts += $parsed
             } else {
@@ -58,7 +54,6 @@ try {
     exit 1
 }
 
-# ---------- Environment variable substitution (fixed for PowerShell 5.1) ----------
 function Expand-EnvVars {
     param($string)
     if ($null -eq $string) { return $null }
@@ -121,7 +116,6 @@ function Resolve-ArtifactPath {
     return Expand-EnvVars $path
 }
 
-# ---------- Collection functions ----------
 function Get-RegistryKeyArtifact {
     param($keyPattern)
     $keyPattern = Resolve-ArtifactPath $keyPattern
@@ -202,7 +196,6 @@ function Invoke-CommandArtifact {
     }
 }
 
-# ---------- Main collection routine ----------
 function Invoke-ArtifactCollection {
     param($artifacts)
 
@@ -346,5 +339,4 @@ function Invoke-ArtifactCollection {
     Write-Host "============================================================"
 }
 
-# ---------- Run ----------
 Invoke-ArtifactCollection -artifacts $artifacts
